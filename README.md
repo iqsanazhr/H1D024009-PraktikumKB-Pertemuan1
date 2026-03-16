@@ -10,9 +10,9 @@ Program Python sederhana yang mengimplementasikan konsep:
 - **while loop**: Menampilkan soal ujian yang diacak
 
 ### 2. Struktur Data
-- **Dictionary**: Menyimpan data nama dan nilai mahasiswa
-- **List**: Menyimpan daftar nilai dan hasil analisis
-- **Tuple**: Menyimpan batas nilai grade
+- **List**: Menyimpan daftar nilai mahasiswa dan rincian hasil analisis.
+- **Tuple**: Menyimpan pasangan (Nama, Nilai) sebagai data input yang immutable.
+- **Set**: Menyimpan grade unik yang muncul dan mendemonstrasikan operasi himpunan (intersection, difference, union).
 
 ### 3. Library
 - **statistics**: Menghitung rata-rata (mean), median, dan standar deviasi nilai
