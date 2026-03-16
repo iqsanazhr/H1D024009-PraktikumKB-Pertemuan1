@@ -3,7 +3,7 @@ Program Analisis Nilai Mahasiswa
 ================================
 Program ini menganalisis data nilai mahasiswa menggunakan:
 1. Struktur Kontrol  : if-elif-else, for loop, while loop
-2. Struktur Data      : list, dictionary, tuple
+2. Struktur Data      : list, set, tuple
 3. Library            : statistics, random, datetime
 """
 
@@ -15,16 +15,16 @@ from datetime import datetime
 # 1. STRUKTUR DATA
 # ============================================================
 
-# Dictionary berisi data mahasiswa (nama: list nilai)
-data_mahasiswa = {
-    "Andi": [85, 90, 78, 92, 88],
-    "Budi": [70, 65, 80, 75, 72],
-    "Citra": [95, 98, 92, 97, 94],
-    "Dina": [60, 55, 58, 62, 50],
-    "Eko": [88, 82, 79, 85, 90],
-}
+# List berisi data mahasiswa dalam bentuk tuple (nama, nilai1, nilai2, ...)
+data_mahasiswa = [
+    ("Andi", [85, 90, 78, 92, 88]),
+    ("Budi", [70, 65, 80, 75, 72]),
+    ("Citra", [95, 98, 92, 97, 94]),
+    ("Dina", [60, 55, 58, 62, 50]),
+    ("Eko", [88, 82, 79, 85, 90]),
+]
 
-# Tuple untuk batas nilai grade
+# Tuple untuk batas nilai grade (tidak bisa diubah / immutable)
 batas_grade = (
     (90, "A"),
     (80, "B"),
@@ -32,6 +32,9 @@ batas_grade = (
     (60, "D"),
     (0, "E"),
 )
+
+# Set untuk menyimpan grade unik yang muncul
+grade_muncul = set()
 
 # List untuk menyimpan hasil analisis
 hasil_analisis = []
@@ -64,32 +67,6 @@ def tentukan_status(grade):
         return "TIDAK LULUS"
 
 
-def analisis_mahasiswa(nama, nilai_list):
-    """Menganalisis data seorang mahasiswa menggunakan library statistics."""
-    rata_rata = float(statistics.mean(nilai_list))
-    median = float(statistics.median(nilai_list))
-    stdev = float(statistics.stdev(nilai_list)) if len(nilai_list) > 1 else 0.0
-    nilai_max = max(nilai_list)
-    nilai_min = min(nilai_list)
-    grade = tentukan_grade(rata_rata)
-    status = tentukan_status(grade)
-
-    rata_rata_rounded: float = int(rata_rata * 100) / 100.0
-    stdev_rounded: float = int(stdev * 100) / 100.0
-
-    return {
-        "nama": nama,
-        "nilai": nilai_list,
-        "rata_rata": rata_rata_rounded,
-        "median": median,
-        "stdev": stdev_rounded,
-        "nilai_max": nilai_max,
-        "nilai_min": nilai_min,
-        "grade": grade,
-        "status": status,
-    }
-
-
 # ============================================================
 # 3. PROGRAM UTAMA
 # ============================================================
@@ -103,10 +80,26 @@ def main():
     print(f"        Waktu Analisis: {waktu_sekarang}")
     print("=" * 60)
 
-    # Struktur kontrol: for loop - iterasi setiap mahasiswa
-    for nama, nilai in data_mahasiswa.items():
-        hasil = analisis_mahasiswa(nama, nilai)
-        hasil_analisis.append(hasil)
+    # Struktur kontrol: for loop - iterasi setiap mahasiswa (list of tuple)
+    for item in data_mahasiswa:
+        nama = item[0]          # Akses elemen tuple index 0
+        nilai_list = item[1]    # Akses elemen tuple index 1
+
+        # Library statistics: menghitung statistik nilai
+        rata_rata = float(statistics.mean(nilai_list))
+        median_val = float(statistics.median(nilai_list))
+        stdev_val = float(statistics.stdev(nilai_list)) if len(nilai_list) > 1 else 0.0
+        nilai_max = max(nilai_list)
+        nilai_min = min(nilai_list)
+        grade = tentukan_grade(rata_rata)
+        status = tentukan_status(grade)
+
+        # Set: menambahkan grade ke set (otomatis unik, tidak duplikat)
+        grade_muncul.add(grade)
+
+        # Simpan hasil ke list
+        hasil_analisis.append([nama, rata_rata, median_val, stdev_val,
+                               nilai_max, nilai_min, grade, status])
 
     # Tampilkan hasil per mahasiswa
     print(f"\n{'No':<4} {'Nama':<10} {'Rata-rata':<12} {'Median':<8} "
@@ -116,25 +109,32 @@ def main():
     nomor = 1
     # Struktur kontrol: for loop
     for h in hasil_analisis:
-        print(f"{nomor:<4} {h['nama']:<10} {h['rata_rata']:<12} "
-              f"{h['median']:<8} {h['stdev']:<8} {h['nilai_max']:<6} "
-              f"{h['nilai_min']:<6} {h['grade']:<7} {h['status']}")
-        nomor += 1
+        print(f"{nomor:<4} {h[0]:<10} {h[1]:<12.2f} "
+              f"{h[2]:<8.1f} {h[3]:<8.2f} {h[4]:<6} "
+              f"{h[5]:<6} {h[6]:<7} {h[7]}")
+        nomor = nomor + 1
 
     # --------------------------------------------------------
     # Statistik keseluruhan
     # --------------------------------------------------------
-    semua_rata = [h["rata_rata"] for h in hasil_analisis]
-    rata_kelas = statistics.mean(semua_rata)
-    tertinggi = max(hasil_analisis, key=lambda x: x["rata_rata"])
-    terendah = min(hasil_analisis, key=lambda x: x["rata_rata"])
+    semua_rata = [h[1] for h in hasil_analisis]
+    rata_kelas = float(statistics.mean(semua_rata))
+
+    # Cari mahasiswa dengan nilai tertinggi dan terendah
+    tertinggi = hasil_analisis[0]
+    terendah = hasil_analisis[0]
+    for h in hasil_analisis:
+        if h[1] > tertinggi[1]:  # type: ignore
+            tertinggi = h
+        if h[1] < terendah[1]:   # type: ignore
+            terendah = h
 
     # Hitung jumlah lulus dan tidak lulus
-    jml_lulus: int = 0
-    jml_tidak: int = 0
+    jml_lulus = 0
+    jml_tidak = 0
     # Struktur kontrol: for loop + if-else
     for h in hasil_analisis:
-        if h["status"] == "LULUS":
+        if h[7] == "LULUS":
             jml_lulus = jml_lulus + 1  # type: ignore
         else:
             jml_tidak = jml_tidak + 1  # type: ignore
@@ -143,12 +143,40 @@ def main():
     print("                 RINGKASAN KELAS")
     print("=" * 60)
     print(f"  Rata-rata Kelas     : {rata_kelas:.2f}")
-    print(f"  Nilai Tertinggi     : {tertinggi['nama']} ({tertinggi['rata_rata']})")
-    print(f"  Nilai Terendah      : {terendah['nama']} ({terendah['rata_rata']})")
+    print(f"  Nilai Tertinggi     : {tertinggi[0]} ({tertinggi[1]:.2f})")
+    print(f"  Nilai Terendah      : {terendah[0]} ({terendah[1]:.2f})")
     print(f"  Jumlah Lulus        : {jml_lulus} mahasiswa")
     print(f"  Jumlah Tidak Lulus  : {jml_tidak} mahasiswa")
-    persen: float = float(jml_lulus) / float(len(hasil_analisis)) * 100
+
+    total = len(hasil_analisis)
+    persen = (jml_lulus * 100.0) / total  # type: ignore
     print(f"  Persentase Kelulusan: {persen:.1f}%")
+
+    # --------------------------------------------------------
+    # Set: menampilkan operasi himpunan (sesuai modul)
+    # --------------------------------------------------------
+    print("\n" + "=" * 60)
+    print("            OPERASI SET (HIMPUNAN)")
+    print("=" * 60)
+
+    semua_grade = {"A", "B", "C", "D", "E"}
+    grade_lulus = {"A", "B", "C"}
+    grade_tidak_lulus = {"D", "E"}
+
+    print(f"\n  Grade yang muncul         : {grade_muncul}")
+    print(f"  Semua grade               : {semua_grade}")
+
+    # Operasi Set: intersection - grade yang muncul DAN termasuk lulus
+    lulus_muncul = grade_muncul.intersection(grade_lulus)
+    print(f"  Grade lulus yang muncul   : {lulus_muncul}")
+
+    # Operasi Set: difference - grade yang TIDAK muncul
+    tidak_muncul = semua_grade.difference(grade_muncul)
+    print(f"  Grade yang tidak muncul   : {tidak_muncul}")
+
+    # Operasi Set: union - gabungan grade lulus dan tidak lulus
+    gabungan = grade_lulus.union(grade_tidak_lulus)
+    print(f"  Union lulus & tidak lulus  : {gabungan}")
 
     # --------------------------------------------------------
     # Library random: simulasi pengacakan soal ujian
@@ -179,7 +207,7 @@ def main():
     i = 0
     while i < len(soal_terpilih):
         print(f"  {i + 1}. {soal_terpilih[i]}")
-        i += 1
+        i = i + 1
 
     print("\n" + "=" * 60)
     print("  Program selesai. Terima kasih!")
